@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QueryFlow – Itinerary Operations</title>
+<style>
+  :root {
+    --teal:#1D9E75;--teal-light:#E1F5EE;--teal-dark:#085041;
+    --amber:#EF9F27;--amber-light:#FAEEDA;
+    --red:#E24B4A;--red-light:#FCEBEB;
+    --blue:#378ADD;--blue-light:#E6F1FB;
+    --gray:#888780;--gray-light:#F1EFE8;
+    --green:#639922;--green-light:#EAF3DE;
+    --purple:#B15EE1;--purple-light:#F0E8FB;
+    --bg:#fff;--bg2:#f7f7f5;--bg3:#f0efe9;
+    --text:#1a1a18;--text2:#5a5a55;--text3:#999992;
+    --border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.16);
+    --radius:8px;--radius-lg:12px;--shadow:0 2px 12px rgba(0,0,0,0.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh}
+
+  /* ── LOGIN SCREEN ── */
+  #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#f0efe9 0%,#e1f5ee 100%)}
+  .login-card{background:var(--bg);border-radius:var(--radius-lg);border:0.5px solid var(--border);width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,0.1);overflow:hidden}
+  .login-header{background:linear-gradient(135deg,var(--teal-dark),var(--teal));padding:28px 28px 22px}
+  .login-logo{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .login-logo-icon{width:38px;height:38px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .login-logo-text{font-size:20px;font-weight:700;color:#fff}
+  .login-subtitle{font-size:13px;color:rgba(255,255,255,0.75)}
+  .login-body{padding:28px}
+  .login-tabs{display:flex;background:var(--bg2);border-radius:var(--radius);padding:3px;margin-bottom:22px;gap:3px}
+  .login-tab{flex:1;padding:8px;text-align:center;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);transition:all .15s;border:none;background:none}
+  .login-tab.active{background:var(--bg);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+  .lf{margin-bottom:14px}
+  .lf label{font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bottom:5px}
+  .lf label span{color:var(--red);margin-left:2px}
+  .lf input,.lf select{width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:10px 12px;font-size:13px;color:var(--text);outline:none;font-family:inherit}
+  .lf input:focus,.lf select:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(29,158,117,0.1)}
+  .login-err{background:var(--red-light);color:var(--red);font-size:12px;padding:9px 12px;border-radius:var(--radius);margin-bottom:14px;display:none}
+  .btn-login{width:100%;background:var(--teal);color:#fff;border:none;border-radius:var(--radius);padding:11px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s;margin-top:4px}
+  .btn-login:hover{opacity:.88}
+  .ops-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:12px}
+
+  /* ── SALES APP ── */
+  #sales-screen{display:none;min-height:100vh;background:var(--bg3)}
+  .sales-header{background:linear-gradient(135deg,var(--teal-dark),var(--teal));padding:16px 20px;display:flex;align-items:center;gap:12px}
+  .sales-header-logo{display:flex;align-items:center;gap:8px}
+  .sh-icon{width:30px;height:30px;background:rgba(255,255,255,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center}
+  .sh-title{font-size:15px;font-weight:700;color:#fff}
+  .sh-sub{font-size:11px;color:rgba(255,255,255,0.7)}
+  .sales-user{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .sales-ava{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+  .sales-username{font-size:12px;color:rgba(255,255,255,0.85)}
+  .sales-logout{font-size:11px;color:rgba(255,255,255,0.6);cursor:pointer;padding:4px 8px;border-radius:4px;border:0.5px solid rgba(255,255,255,0.2)}
+  .sales-logout:hover{background:rgba(255,255,255,0.1)}
+
+  .sales-body{max-width:700px;margin:0 auto;padding:24px 20px}
+  .sales-section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px;margin-top:24px}
+  .sales-section-title:first-child{margin-top:0}
+
+  /* Simple query form */
+  .qform-card{background:var(--bg);border-radius:var(--radius-lg);border:0.5px solid var(--border);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px}
+  .qform-card-header{background:var(--teal-light);padding:14px 18px;border-bottom:0.5px solid var(--border)}
+  .qform-card-title{font-size:13px;font-weight:600;color:var(--teal-dark)}
+  .qform-card-sub{font-size:11px;color:var(--teal);margin-top:2px}
+  .qform-body{padding:18px}
+  .qf-row{display:grid;gap:12px;margin-bottom:12px}
+  .qf-row.cols2{grid-template-columns:1fr 1fr}
+  .qf-row.cols3{grid-template-columns:1fr 1fr 1fr}
+  .qf-group{display:flex;flex-direction:column;gap:4px}
+  .qf-group label{font-size:12px;font-weight:600;color:var(--text2)}
+  .qf-group label span{color:var(--red);margin-left:2px}
+  .qf-group input,.qf-group select,.qf-group textarea{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:9px 11px;font-size:13px;color:var(--text);outline:none;font-family:inherit;width:100%;transition:all .15s}
+  .qf-group input:focus,.qf-group select:focus,.qf-group textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(29,158,117,0.1)}
+  .qf-group textarea{resize:vertical;min-height:64px;line-height:1.5}
+  .prio-row{display:flex;gap:8px}
+  .pp{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:9px 6px;border-radius:var(--radius);border:1.5px solid var(--border);cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);transition:all .14s;user-select:none}
+  .pp.ph{border-color:var(--red);background:var(--red-light);color:var(--red)}
+  .pp.pm{border-color:var(--amber);background:var(--amber-light);color:#7a5000}
+  .pp.pl{border-color:var(--teal);background:var(--teal-light);color:var(--teal-dark)}
+  .btn-submit-query{width:100%;background:var(--teal);color:#fff;border:none;border-radius:var(--radius);padding:12px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .btn-submit-query:hover{opacity:.88}
+  .btn-submit-query:disabled{opacity:.5;cursor:not-allowed}
+
+  /* My queries list (sales view) */
+  .my-queries-list{display:flex;flex-direction:column;gap:8px}
+  .mq-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+  .mq-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+  .mq-body{flex:1;min-width:0}
+  .mq-row1{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .mq-id{font-size:11px;color:var(--text3)}
+  .mq-title{font-size:13px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sbadge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500;flex-shrink:0}
+  .s-new{background:var(--blue-light);color:var(--blue)}
+  .s-ip{background:var(--amber-light);color:#633806}
+  .s-pend{background:var(--gray-light);color:#444441}
+  .s-done{background:var(--green-light);color:var(--teal-dark)}
+  .mq-row2{font-size:11px;color:var(--text3);display:flex;gap:8px;flex-wrap:wrap}
+  .mq-note{font-size:11px;color:var(--text2);background:var(--amber-light);border-radius:6px;padding:4px 8px;margin-top:6px;display:flex;gap:5px;align-items:flex-start}
+  .empty-sales{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
+
+  /* ── OPS APP ── */
+  #app-screen{display:none}
+  .app-layout{display:flex;height:100vh}
+  .sidebar{width:224px;background:var(--bg);border-right:0.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+  .sidebar-top{padding:16px;border-bottom:0.5px solid var(--border)}
+  .sb-logo{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+  .sb-logo-icon{width:28px;height:28px;background:var(--teal);border-radius:6px;display:flex;align-items:center;justify-content:center}
+  .sb-logo-text{font-size:14px;font-weight:700}
+  .sb-badge{font-size:9px;background:var(--amber-light);color:#7a5000;border-radius:4px;padding:2px 6px;font-weight:600;margin-left:4px}
+  .storage-row{display:flex;align-items:center;gap:6px}
+  .storage-dot{width:7px;height:7px;border-radius:50%;background:var(--teal)}
+  .storage-text{font-size:11px;color:var(--text3);flex:1}
+  .export-btn{background:none;border:none;cursor:pointer;color:var(--teal);font-size:11px;padding:2px 6px;border-radius:4px}
+  .export-btn:hover{background:var(--teal-light)}
+  .nav-section{font-size:10px;color:var(--text3);padding:12px 16px 5px;letter-spacing:.06em;text-transform:uppercase}
+  .nav-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;color:var(--text2);cursor:pointer;border-right:2px solid transparent;transition:all .12s;user-select:none}
+  .nav-item:hover{background:var(--bg2);color:var(--text)}
+  .nav-item.active{background:var(--teal-light);color:var(--teal-dark);font-weight:500;border-right-color:var(--teal)}
+  .nav-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .nav-badge{margin-left:auto;font-size:10px;background:var(--blue-light);color:var(--blue);border-radius:10px;padding:1px 7px;font-weight:500}
+  .nav-badge.urgent{background:var(--red-light);color:var(--red)}
+  .sidebar-bottom{margin-top:auto;padding:12px 16px;border-top:0.5px solid var(--border)}
+  .user-row{display:flex;align-items:center;gap:8px}
+  .user-avatar{width:26px;height:26px;border-radius:50%;background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--teal-dark);flex-shrink:0}
+  .user-name{font-size:12px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .settings-link{font-size:11px;color:var(--text3);cursor:pointer}
+  .settings-link:hover{color:var(--teal)}
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:0.5px solid var(--border);background:var(--bg)}
+  .topbar-title{font-size:15px;font-weight:600;flex:1}
+  .search-wrap{display:flex;align-items:center;gap:6px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:6px 10px}
+  .search-wrap input{background:none;border:none;outline:none;font-size:12px;color:var(--text);width:150px}
+  .search-wrap input::placeholder{color:var(--text3)}
+  .notif-btn{position:relative;background:none;border:0.5px solid var(--border);border-radius:var(--radius);padding:6px 10px;cursor:pointer;color:var(--text2);font-size:12px;display:flex;align-items:center;gap:5px}
+  .notif-btn:hover{background:var(--bg2)}
+  .notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--bg);display:none}
+  .notif-dot.show{display:block}
+  .stats-bar{display:flex;gap:10px;padding:12px 20px;background:var(--bg);border-bottom:0.5px solid var(--border)}
+  .stat-tile{background:var(--bg2);border-radius:var(--radius);padding:8px 14px;flex:1;cursor:pointer;transition:all .12s}
+  .stat-tile:hover{background:var(--teal-light)}
+  .stat-num{font-size:22px;font-weight:600;line-height:1}
+  .stat-lbl{font-size:11px;color:var(--text3);margin-top:2px}
+  .filters{display:flex;align-items:center;gap:6px;padding:10px 20px;background:var(--bg);border-bottom:0.5px solid var(--border);flex-wrap:wrap}
+  .filter-chip{padding:4px 10px;border-radius:20px;border:0.5px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;background:none;transition:all .12s}
+  .filter-chip:hover,.filter-chip.active{background:var(--bg2);color:var(--text);border-color:var(--border2)}
+  .filter-sep{width:0.5px;height:16px;background:var(--border);margin:0 2px}
+  .agent-filter{padding:4px 10px;border-radius:20px;border:0.5px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;background:none;outline:none}
+  .list-area{flex:1;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:8px}
+  .qcard{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:13px 16px;cursor:pointer;transition:all .12s;display:flex;gap:12px}
+  .qcard:hover{border-color:var(--border2);box-shadow:var(--shadow)}
+  .qcard.sel{border-color:var(--teal);border-width:1px}
+  .qcard.is-new-highlight{border-color:var(--blue);background:var(--blue-light)}
+  .prio-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+  .ph{background:var(--red)}.pm{background:var(--amber)}.pl{background:var(--teal)}
+  .qcard-body{flex:1;min-width:0}
+  .qcard-row1{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .qcard-id{font-size:11px;color:var(--text3);flex-shrink:0}
+  .qcard-title{font-size:13px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .qcard-row2{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text3);flex-wrap:wrap}
+  .agent-pill{display:flex;align-items:center;gap:4px;background:var(--bg2);border-radius:10px;padding:2px 7px;font-size:10px;color:var(--text2)}
+  .agent-ava{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600}
+  .empty-msg{text-align:center;color:var(--text3);font-size:13px;padding:50px 0}
+  .detail{width:340px;flex-shrink:0;border-left:0.5px solid var(--border);background:var(--bg);display:flex;flex-direction:column;overflow:hidden}
+  .detail-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-size:13px;gap:8px;padding:20px;text-align:center}
+  .detail-head{padding:14px 16px;border-bottom:0.5px solid var(--border)}
+  .detail-qid{font-size:11px;color:var(--text3);margin-bottom:3px}
+  .detail-qtitle{font-size:14px;font-weight:600;line-height:1.4}
+  .detail-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+  .dsec-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .info-tile{background:var(--bg2);border-radius:var(--radius);padding:8px 10px}
+  .itile-lbl{font-size:10px;color:var(--text3);margin-bottom:2px}
+  .itile-val{font-size:12px;font-weight:500;color:var(--text)}
+  .desc-box{background:var(--bg2);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6}
+  .tl{display:flex;flex-direction:column;gap:10px}
+  .tl-item{display:flex;gap:10px}
+  .tl-spine{display:flex;flex-direction:column;align-items:center}
+  .tl-d{width:8px;height:8px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:3px}
+  .tl-bar2{width:1px;background:var(--border);flex:1;min-height:8px;margin-top:3px}
+  .tl-action{font-size:12px;font-weight:500;color:var(--text)}
+  .tl-by{font-size:11px;color:var(--text2)}
+  .tl-t{font-size:10px;color:var(--text3)}
+  .agent-assign-box{background:var(--bg2);border-radius:var(--radius);padding:10px 12px}
+  .agent-assign-row{display:flex;align-items:center;gap:8px}
+  .agent-big-ava{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+  .agent-info{flex:1}
+  .agent-name{font-size:13px;font-weight:500;color:var(--text)}
+  .agent-role{font-size:11px;color:var(--text3)}
+  .agent-workload{font-size:10px;color:var(--text2);margin-top:2px}
+  .assign-btn{font-size:11px;color:var(--teal);cursor:pointer;background:none;border:0.5px solid var(--teal);border-radius:4px;padding:3px 8px}
+  .assign-btn:hover{background:var(--teal-light)}
+  .detail-foot{padding:12px 16px;border-top:0.5px solid var(--border);display:flex;flex-direction:column;gap:8px}
+  .foot-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+  .status-row select{width:100%;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:12px;color:var(--text);outline:none;font-family:inherit}
+  .status-row select:focus{border-color:var(--teal)}
+  .note-ta{width:100%;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:12px;color:var(--text);outline:none;font-family:inherit;resize:none}
+  .note-ta:focus{border-color:var(--teal)}
+  .btn-update{width:100%;background:var(--teal);color:#fff;border:none;border-radius:var(--radius);padding:9px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .15s}
+  .btn-update:hover{opacity:.88}
+  .btn-delete{width:100%;background:none;color:var(--red);border:0.5px solid var(--red);border-radius:var(--radius);padding:7px;font-size:11px;cursor:pointer;transition:all .12s}
+  .btn-delete:hover{background:var(--red-light)}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+  .modal-bg.hidden{display:none}
+  .modal-box{background:var(--bg);border-radius:var(--radius-lg);padding:22px;width:100%;max-width:360px;border:0.5px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.14)}
+  .modal-title{font-size:14px;font-weight:600;margin-bottom:14px}
+  .agent-option{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--radius);cursor:pointer;transition:background .1s}
+  .agent-option:hover{background:var(--bg2)}
+  .ao-info{flex:1}
+  .ao-name{font-size:13px;font-weight:500}
+  .ao-load{font-size:11px;color:var(--text3)}
+  .ao-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ao-check.sel{background:var(--teal);border-color:var(--teal)}
+  .modal-actions{display:flex;gap:8px;margin-top:14px}
+  .btn-cancel{flex:1;background:none;border:0.5px solid var(--border);border-radius:var(--radius);padding:8px;font-size:12px;cursor:pointer;color:var(--text2)}
+  .btn-assign{flex:1;background:var(--teal);color:#fff;border:none;border-radius:var(--radius);padding:8px;font-size:12px;font-weight:500;cursor:pointer}
+  .agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:16px 20px;overflow-y:auto}
+  .agent-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px}
+  .ac-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ac-ava{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600}
+  .ac-name{font-size:13px;font-weight:600}
+  .ac-role{font-size:11px;color:var(--text3)}
+  .ac-stats{display:flex;gap:8px}
+  .ac-stat{flex:1;background:var(--bg2);border-radius:6px;padding:6px 8px;text-align:center}
+  .ac-stat-n{font-size:16px;font-weight:600}
+  .ac-stat-l{font-size:10px;color:var(--text3)}
+  .progress-bar{height:4px;background:var(--bg3);border-radius:2px;margin-top:10px;overflow:hidden}
+  .progress-fill{height:100%;background:var(--teal);border-radius:2px;transition:width .3s}
+
+  /* Notification panel */
+  .notif-panel{position:fixed;top:56px;right:16px;width:320px;background:var(--bg);border-radius:var(--radius-lg);border:0.5px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.14);z-index:200;overflow:hidden;display:none}
+  .notif-panel.open{display:block}
+  .notif-panel-header{padding:12px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .notif-panel-title{font-size:13px;font-weight:600}
+  .notif-clear{font-size:11px;color:var(--teal);cursor:pointer;background:none;border:none}
+  .notif-list{max-height:320px;overflow-y:auto}
+  .notif-item{padding:12px 16px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background .1s}
+  .notif-item:hover{background:var(--bg2)}
+  .notif-item.unread{background:var(--blue-light)}
+  .notif-item-title{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
+  .notif-item-sub{font-size:11px;color:var(--text3)}
+  .notif-empty{padding:24px;text-align:center;color:var(--text3);font-size:12px}
+
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;padding:10px 16px;border-radius:var(--radius);font-size:12px;z-index:300;transition:all .3s;opacity:0;transform:translateY(10px);pointer-events:none}
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast.success{background:var(--teal)}
+  .toast.error{background:var(--red)}
+  .toast.info{background:var(--blue)}
+
+  @media(max-width:900px){.detail{display:none}.sidebar{width:180px}}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-logo">
+        <div class="login-logo-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="#fff" stroke-width="1.4"/><path d="M6 7h8M6 10h8M6 13h5" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </div>
+        <div class="login-logo-text">QueryFlow</div>
+      </div>
+      <div class="login-subtitle">Itinerary Operations Platform</div>
+    </div>
+    <div class="login-body">
+      <div class="login-tabs">
+        <button class="login-tab active" id="tab-sales" onclick="switchTab('sales')">Sales Team</button>
+        <button class="login-tab" id="tab-ops" onclick="switchTab('ops')">Operations Team</button>
+      </div>
+
+      <!-- Sales login -->
+      <div id="form-sales">
+        <div class="lf">
+          <label>Your Name <span>*</span></label>
+          <input id="s-name" placeholder="e.g. Riya Sharma" autocomplete="name">
+        </div>
+        <div class="lf">
+          <label>Load sample data?</label>
+          <select id="s-demo">
+            <option value="yes">Yes, show me examples first</option>
+            <option value="no">No, start fresh</option>
+          </select>
+        </div>
+        <div class="login-err" id="s-err"></div>
+        <button class="btn-login" onclick="loginSales()">Enter as Sales →</button>
+      </div>
+
+      <!-- Ops login -->
+      <div id="form-ops" style="display:none">
+        <div class="lf">
+          <label>Your Name <span>*</span></label>
+          <input id="o-name" placeholder="e.g. Ankit Verma" autocomplete="name">
+        </div>
+        <div class="lf">
+          <label>Operations Password <span>*</span></label>
+          <input id="o-pass" type="password" placeholder="Enter ops password">
+        </div>
+        <div class="login-err" id="o-err"></div>
+        <button class="btn-login" onclick="loginOps()">Enter as Ops →</button>
+        <div class="ops-hint">Password is shared with your ops team lead</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SALES SCREEN ═══ -->
+<div id="sales-screen">
+  <div class="sales-header">
+    <div class="sales-header-logo">
+      <div class="sh-icon">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="#fff" stroke-width="1.4"/><path d="M6 7h8M6 10h8M6 13h5" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="sh-title">QueryFlow</div>
+        <div class="sh-sub">Sales Portal</div>
+      </div>
+    </div>
+    <div class="sales-user">
+      <div class="sales-ava" id="s-ava">U</div>
+      <span class="sales-username" id="s-uname">User</span>
+      <span class="sales-logout" onclick="logout()">Sign out</span>
+    </div>
+  </div>
+
+  <div class="sales-body">
+    <!-- Submit form -->
+    <div class="sales-section-title">📋 Submit New Query</div>
+    <div class="qform-card">
+      <div class="qform-card-header">
+        <div class="qform-card-title">New Itinerary Request</div>
+        <div class="qform-card-sub">Ops team will be notified instantly via email + browser notification</div>
+      </div>
+      <div class="qform-body">
+        <!-- Row 1: Client + Pax -->
+        <div class="qf-row cols2">
+          <div class="qf-group">
+            <label>Client / Group Name <span>*</span></label>
+            <input id="f-client" placeholder="e.g. Sharma Family">
+          </div>
+          <div class="qf-group">
+            <label>No. of Travellers <span>*</span></label>
+            <input id="f-pax" type="number" min="1" placeholder="e.g. 4">
+          </div>
+        </div>
+        <!-- Row 2: Destination -->
+        <div class="qf-row">
+          <div class="qf-group">
+            <label>Destination(s) <span>*</span></label>
+            <input id="f-dest" placeholder="e.g. Bali, Indonesia  or  France + Italy">
+          </div>
+        </div>
+        <!-- Row 3: Dates -->
+        <div class="qf-row cols2">
+          <div class="qf-group">
+            <label>Travel Date (From)</label>
+            <input id="f-tdate" type="date">
+          </div>
+          <div class="qf-group">
+            <label>Return Date</label>
+            <input id="f-rdate" type="date">
+          </div>
+        </div>
+        <!-- Row 4: Budget + Hotel -->
+        <div class="qf-row cols2">
+          <div class="qf-group">
+            <label>Budget (approx.)</label>
+            <input id="f-budget" placeholder="e.g. ₹2,00,000">
+          </div>
+          <div class="qf-group">
+            <label>Hotel Preference</label>
+            <select id="f-hotel">
+              <option value="">No preference</option>
+              <option>5-Star Luxury</option>
+              <option>4-Star</option>
+              <option>3-Star / Budget</option>
+              <option>Heritage / Boutique</option>
+              <option>Resort</option>
+            </select>
+          </div>
+        </div>
+        <!-- Row 5: Meal + Special -->
+        <div class="qf-row cols2">
+          <div class="qf-group">
+            <label>Meal Preference</label>
+            <select id="f-meal">
+              <option value="">No preference</option>
+              <option>Vegetarian</option>
+              <option>Vegan</option>
+              <option>Jain</option>
+              <option>Halal</option>
+              <option>Non-Vegetarian</option>
+            </select>
+          </div>
+          <div class="qf-group">
+            <label>Visa Needed?</label>
+            <select id="f-visa">
+              <option value="">Not required</option>
+              <option>Yes – please assist</option>
+              <option>Not sure</option>
+            </select>
+          </div>
+        </div>
+        <!-- Priority -->
+        <div class="qf-group" style="margin-bottom:12px">
+          <label>Priority <span>*</span></label>
+          <div class="prio-row">
+            <div class="pp ph" id="fp-high" onclick="setFPrio('high')">🔴 High</div>
+            <div class="pp" id="fp-medium" onclick="setFPrio('medium')">🟡 Medium</div>
+            <div class="pp" id="fp-low" onclick="setFPrio('low')">🟢 Low</div>
+          </div>
+        </div>
+        <!-- Notes -->
+        <div class="qf-group">
+          <label>Additional Notes for Ops</label>
+          <textarea id="f-notes" placeholder="Special occasion, allergies, activities, any other details…"></textarea>
+        </div>
+        <button class="btn-submit-query" onclick="submitSalesQuery()" id="submit-btn">
+          <svg width="14" height="14" viewBox="0 0 16 16"><path d="M2 8h12M9 4l4 4-4 4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          Submit to Ops Team
+        </button>
+      </div>
+    </div>
+
+    <!-- My queries -->
+    <div class="sales-section-title">📂 My Queries</div>
+    <div id="my-queries-list" class="my-queries-list"></div>
+  </div>
+</div>
+
+<!-- ═══ OPS APP SCREEN ═══ -->
+<div id="app-screen">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-top">
+        <div class="sb-logo">
+          <div class="sb-logo-icon">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="#fff" stroke-width="1.4"/><path d="M6 7h8M6 10h8M6 13h5" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="sb-logo-text">QueryFlow</span>
+          <span class="sb-badge">OPS</span>
+        </div>
+        <div class="storage-row">
+          <div class="storage-dot"></div>
+          <span class="storage-text">Local storage</span>
+          <button class="export-btn" onclick="exportData()">↓ Export</button>
+        </div>
+      </div>
+      <div class="nav-section">Queries</div>
+      <div class="nav-item active" onclick="setView('all',this)"><div class="nav-dot" style="background:var(--teal)"></div>All Queries<span class="nav-badge" id="nb-all">0</span></div>
+      <div class="nav-item" onclick="setView('new',this)"><div class="nav-dot" style="background:var(--blue)"></div>New<span class="nav-badge urgent" id="nb-new">0</span></div>
+      <div class="nav-item" onclick="setView('in-progress',this)"><div class="nav-dot" style="background:var(--amber)"></div>In Progress<span class="nav-badge" id="nb-ip">0</span></div>
+      <div class="nav-item" onclick="setView('pending',this)"><div class="nav-dot" style="background:var(--gray)"></div>Pending Info<span class="nav-badge" id="nb-pend">0</span></div>
+      <div class="nav-item" onclick="setView('done',this)"><div class="nav-dot" style="background:var(--green)"></div>Completed</div>
+      <div class="nav-section">Team</div>
+      <div class="nav-item" onclick="setView('agents',this)"><div class="nav-dot" style="background:var(--purple)"></div>Agents</div>
+      <div class="sidebar-bottom">
+        <div class="user-row">
+          <div class="user-avatar" id="ops-ava">O</div>
+          <div class="user-name" id="ops-name">Ops</div>
+          <span class="settings-link" onclick="logout()">Sign out</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="main" id="main-area">
+      <div class="topbar">
+        <span class="topbar-title" id="view-title">All Queries</span>
+        <div class="search-wrap">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#888" stroke-width="1.2"/><path d="M10.5 10.5L14 14" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="Search queries…" id="search-inp" oninput="render()">
+        </div>
+        <button class="notif-btn" onclick="toggleNotifPanel()" id="notif-btn">
+          🔔 Alerts <div class="notif-dot" id="notif-dot"></div>
+        </button>
+      </div>
+
+      <div class="stats-bar" id="stats-bar">
+        <div class="stat-tile"><div class="stat-num" id="st-total">0</div><div class="stat-lbl">Total</div></div>
+        <div class="stat-tile"><div class="stat-num" id="st-new">0</div><div class="stat-lbl">Awaiting ops</div></div>
+        <div class="stat-tile"><div class="stat-num" id="st-ip">0</div><div class="stat-lbl">In progress</div></div>
+        <div class="stat-tile"><div class="stat-num" id="st-done">0</div><div class="stat-lbl">Completed</div></div>
+      </div>
+
+      <div class="filters" id="filters-bar">
+        <button class="filter-chip active" onclick="setPrio('all',this)">All</button>
+        <button class="filter-chip" onclick="setPrio('high',this)">🔴 High</button>
+        <button class="filter-chip" onclick="setPrio('medium',this)">🟡 Medium</button>
+        <button class="filter-chip" onclick="setPrio('low',this)">🟢 Low</button>
+        <div class="filter-sep"></div>
+        <select class="agent-filter" id="agent-filter" onchange="render()">
+          <option value="">All agents</option>
+        </select>
+        <div class="filter-sep"></div>
+        <button class="filter-chip" onclick="doSort('date')">Latest</button>
+        <button class="filter-chip" onclick="doSort('priority')">By priority</button>
+      </div>
+
+      <div class="list-area" id="list-area"></div>
+      <div class="agents-grid" id="agents-view" style="display:none"></div>
+    </div>
+
+    <div class="detail" id="detail-panel">
+      <div class="detail-empty" id="det-empty">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><rect x="7" y="4" width="22" height="28" rx="3" stroke="#ccc" stroke-width="1.3"/><path d="M11 12h14M11 17h14M11 22h9" stroke="#ccc" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Select a query
+      </div>
+      <div id="det-content" style="display:none;flex-direction:column;height:100%">
+        <div class="detail-head">
+          <div class="detail-qid" id="d-id"></div>
+          <div class="detail-qtitle" id="d-title"></div>
+        </div>
+        <div class="detail-body">
+          <div>
+            <div class="dsec-label">Details</div>
+            <div class="info-grid">
+              <div class="info-tile"><div class="itile-lbl">Status</div><div class="itile-val" id="d-status"></div></div>
+              <div class="info-tile"><div class="itile-lbl">Priority</div><div class="itile-val" id="d-priority"></div></div>
+              <div class="info-tile"><div class="itile-lbl">Client</div><div class="itile-val" id="d-client"></div></div>
+              <div class="info-tile"><div class="itile-lbl">Destination</div><div class="itile-val" id="d-dest"></div></div>
+              <div class="info-tile"><div class="itile-lbl">Travel date</div><div class="itile-val" id="d-tdate"></div></div>
+              <div class="info-tile"><div class="itile-lbl">Pax</div><div class="itile-val" id="d-pax"></div></div>
+            </div>
+          </div>
+          <div id="d-extra-section" style="display:none">
+            <div class="dsec-label">Preferences</div>
+            <div class="info-grid" id="d-extra-grid"></div>
+          </div>
+          <div>
+            <div class="dsec-label">Notes from Sales</div>
+            <div class="desc-box" id="d-desc"></div>
+          </div>
+          <div>
+            <div class="dsec-label" style="display:flex;align-items:center;gap:6px">
+              Assigned Agent
+              <button class="assign-btn" onclick="openAgentPicker()">Change</button>
+            </div>
+            <div class="agent-assign-box"><div class="agent-assign-row" id="d-agent-row"></div></div>
+          </div>
+          <div>
+            <div class="dsec-label">Activity Log</div>
+            <div class="tl" id="d-tl"></div>
+          </div>
+        </div>
+        <div class="detail-foot" id="det-foot">
+          <div class="foot-label">Update Status</div>
+          <div class="status-row">
+            <select id="status-sel">
+              <option value="new">New</option>
+              <option value="in-progress">In Progress</option>
+              <option value="pending">Pending Info</option>
+              <option value="done">Completed</option>
+            </select>
+          </div>
+          <textarea class="note-ta" id="note-ta" rows="2" placeholder="Add a note for the sales team…"></textarea>
+          <button class="btn-update" onclick="updateStatus()">Update Status</button>
+          <button class="btn-delete" onclick="deleteQuery()">Delete Query</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Notification Panel -->
+<div class="notif-panel" id="notif-panel">
+  <div class="notif-panel-header">
+    <span class="notif-panel-title">🔔 Query Alerts</span>
+    <button class="notif-clear" onclick="clearNotifs()">Clear all</button>
+  </div>
+  <div class="notif-list" id="notif-list"></div>
+</div>
+
+<!-- Agent Picker Modal -->
+<div class="modal-bg hidden" id="agent-modal">
+  <div class="modal-box">
+    <div class="modal-title">Assign to Ops Agent</div>
+    <div id="agent-options"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAgentModal()">Cancel</button>
+      <button class="btn-assign" onclick="confirmAssign()">Assign</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────
+const OPS_PASSWORD   = '@Operations@4321';
+const NOTIFY_EMAIL   = 'hrithiksindhwani@travelmeventures.com';
+const FORMSPREE_URL  = 'https://formspree.io/f/xpwzgqvb'; // pre-configured endpoint
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let CFG       = { userName:'', role:'' };
+let queries   = [];
+let agents    = [];
+let notifs    = [];
+let counter   = 100;
+let selectedId    = null;
+let activeView    = 'all';
+let activePrio    = 'all';
+let activeSort    = 'date';
+let selectedAgentId = null;
+let formPrio  = 'high';
+
+const STATUS_LABEL = {new:'New','in-progress':'In Progress',pending:'Pending Info',done:'Completed'};
+const STATUS_CLASS = {new:'s-new','in-progress':'s-ip',pending:'s-pend',done:'s-done'};
+const PRIO_CLASS   = {high:'ph',medium:'pm',low:'pl'};
+const AGENT_COLORS = ['#1D9E75','#378ADD','#E24B4A','#EF9F27','#B15EE1'];
+
+// ── DEMO DATA ─────────────────────────────────────────────────────────────
+const DEMO_AGENTS = [
+  {id:'A1',name:'Ankit Verma',role:'Senior Ops',color:'#1D9E75'},
+  {id:'A2',name:'Sneha Kapoor',role:'Ops Executive',color:'#378ADD'},
+  {id:'A3',name:'Dev Sharma',role:'Ops Executive',color:'#E24B4A'},
+];
+const DEMO_QUERIES = [
+  {id:'QRY-001',title:'Bali Honeymoon – Arora Couple',client:'Arora Couple',destination:'Bali, Indonesia',pax:2,travelDate:'2026-06-15',returnDate:'2026-06-22',priority:'high',status:'in-progress',hotel:'5-Star Luxury',meal:'Non-Vegetarian',budget:'₹4,50,000',visa:'',notes:'Private pool villa, sunset dinner. No spicy food.',submittedBy:'Demo Sales',assignedAgent:'A1',log:[{action:'Query submitted',by:'Demo Sales',time:'Today, 9:10 AM'},{action:'Picked up — hotels being confirmed',by:'Ankit (Ops)',time:'Today, 10:30 AM'}]},
+  {id:'QRY-002',title:'Rajasthan Tour – Mehta Family',client:'Mehta Family',destination:'Rajasthan, India',pax:6,travelDate:'2026-07-01',returnDate:'2026-07-10',priority:'high',status:'new',hotel:'Heritage / Boutique',meal:'Vegetarian',budget:'₹3,00,000',visa:'',notes:'Camel safari, palace hotels only. One child aged 7.',submittedBy:'Demo Sales',assignedAgent:'',log:[{action:'Query submitted',by:'Demo Sales',time:'Today, 11:00 AM'}]},
+  {id:'QRY-003',title:'Thailand Holiday – Singh Family',client:'Singh Family',destination:'Phuket, Thailand',pax:5,travelDate:'2026-09-05',returnDate:'2026-09-12',priority:'low',status:'new',hotel:'Resort',meal:'Vegetarian',budget:'₹2,50,000',visa:'',notes:'Kid-friendly, theme parks.',submittedBy:'Demo Sales',assignedAgent:'',log:[{action:'Query submitted',by:'Demo Sales',time:'Today, 1:15 PM'}]},
+  {id:'QRY-004',title:'Maldives Retreat – Gupta',client:'Gupta, R.',destination:'Maldives',pax:2,travelDate:'2026-06-28',returnDate:'2026-07-05',priority:'high',status:'done',hotel:'5-Star Luxury',meal:'Non-Vegetarian',budget:'$6,000',visa:'',notes:'Overwater bungalow, scuba diving.',submittedBy:'Demo Sales',assignedAgent:'A3',log:[{action:'Query submitted',by:'Demo Sales',time:'3 days ago'},{action:'Status → Completed: Itinerary sent & approved',by:'Dev (Ops)',time:'Yesterday'}]},
+];
+
+// ── STORAGE ───────────────────────────────────────────────────────────────
+function save() {
+  try { localStorage.setItem('qf2', JSON.stringify({queries,agents,notifs,counter,CFG})); } catch(e){}
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('qf2')||'null');
+    if(d){ queries=d.queries||[]; agents=d.agents||[]; notifs=d.notifs||[]; counter=d.counter||100; CFG=d.CFG||CFG; return true; }
+  } catch(e){}
+  return false;
+}
+
+// ── LOGIN / TAB ───────────────────────────────────────────────────────────
+function switchTab(t) {
+  document.getElementById('form-sales').style.display = t==='sales'?'block':'none';
+  document.getElementById('form-ops').style.display   = t==='ops'  ?'block':'none';
+  document.getElementById('tab-sales').classList.toggle('active', t==='sales');
+  document.getElementById('tab-ops').classList.toggle('active',   t==='ops');
+}
+
+function loginSales() {
+  const name = document.getElementById('s-name').value.trim();
+  const err  = document.getElementById('s-err');
+  if(!name){ err.textContent='Please enter your name.'; err.style.display='block'; return; }
+  err.style.display='none';
+  const demo = document.getElementById('s-demo').value === 'yes';
+  CFG = { userName:name, role:'sales' };
+  if(demo && !queries.length){ queries=[...DEMO_QUERIES.map(q=>({...q,log:[...q.log]}))]; agents=[...DEMO_AGENTS]; }
+  save();
+  showSalesScreen();
+}
+
+function loginOps() {
+  const name = document.getElementById('o-name').value.trim();
+  const pass = document.getElementById('o-pass').value;
+  const err  = document.getElementById('o-err');
+  if(!name){ err.textContent='Please enter your name.'; err.style.display='block'; return; }
+  if(pass !== OPS_PASSWORD){ err.textContent='Incorrect password. Contact your ops lead.'; err.style.display='block'; return; }
+  err.style.display='none';
+  CFG = { userName:name, role:'ops' };
+  save();
+  showOpsScreen();
+}
+
+function logout() {
+  CFG = { userName:'', role:'' };
+  save();
+  document.getElementById('sales-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display   = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('s-name').value = '';
+  document.getElementById('o-name').value = '';
+  document.getElementById('o-pass').value = '';
+  document.getElementById('o-err').style.display = 's-err';
+}
+
+// ── SALES SCREEN ──────────────────────────────────────────────────────────
+function showSalesScreen() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('sales-screen').style.display = 'block';
+  document.getElementById('s-ava').textContent   = CFG.userName.charAt(0).toUpperCase();
+  document.getElementById('s-uname').textContent = CFG.userName;
+  formPrio = 'high';
+  setFPrio('high');
+  renderMyQueries();
+  requestNotifPermission();
+}
+
+function setFPrio(p) {
+  formPrio = p;
+  ['high','medium','low'].forEach(x => {
+    const el = document.getElementById('fp-'+x);
+    el.className = 'pp' + (x===p ? (x==='high'?' ph':x==='medium'?' pm':' pl') : '');
+  });
+}
+
+function submitSalesQuery() {
+  const client = document.getElementById('f-client').value.trim();
+  const dest   = document.getElementById('f-dest').value.trim();
+  const pax    = document.getElementById('f-pax').value.trim();
+  if(!client||!dest||!pax){ showToast('Client name, destination and pax are required','error'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  const id = 'QRY-' + String(counter++).padStart(3,'0');
+  const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const q = {
+    id, client, destination:dest, pax:parseInt(pax),
+    title: `${dest} – ${client}`,
+    travelDate:  document.getElementById('f-tdate').value || 'TBD',
+    returnDate:  document.getElementById('f-rdate').value || '',
+    priority:    formPrio,
+    status:      'new',
+    hotel:       document.getElementById('f-hotel').value,
+    meal:        document.getElementById('f-meal').value,
+    budget:      document.getElementById('f-budget').value.trim(),
+    visa:        document.getElementById('f-visa').value,
+    notes:       document.getElementById('f-notes').value.trim() || 'No additional notes.',
+    submittedBy: CFG.userName,
+    assignedAgent: '',
+    log: [{ action:'Query submitted', by: CFG.userName+' (Sales)', time: now }]
+  };
+  queries.unshift(q);
+
+  // Add notification
+  const notif = { id: Date.now(), queryId:id, title:`New query: ${q.title}`, sub:`${q.pax} pax · ${q.destination} · ${formPrio} priority`, time: now, read:false };
+  notifs.unshift(notif);
+  save();
+
+  // Notify
+  sendBrowserNotif(`New query: ${q.title}`, `${q.pax} pax · ${q.destination}`);
+  sendEmail(q);
+
+  // Reset form
+  ['f-client','f-dest','f-pax','f-tdate','f-rdate','f-budget','f-notes'].forEach(id=>{ document.getElementById(id).value=''; });
+  ['f-hotel','f-meal','f-visa'].forEach(id=>{ document.getElementById(id).selectedIndex=0; });
+  setFPrio('high');
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16"><path d="M2 8h12M9 4l4 4-4 4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg> Submit to Ops Team';
+
+  renderMyQueries();
+  showToast(`Query ${id} submitted! Ops team notified ✓`,'success');
+}
+
+function renderMyQueries() {
+  const el  = document.getElementById('my-queries-list');
+  const mine = queries.filter(q => q.submittedBy === CFG.userName);
+  if(!mine.length){ el.innerHTML='<div class="empty-sales">No queries yet — submit your first one above!</div>'; return; }
+  el.innerHTML = mine.map(q => {
+    // Latest ops note (any log entry not by sales)
+    const opsNote = [...(q.log||[])].reverse().find(l => l.by && !l.by.includes('Sales') && l.action !== 'Query submitted');
+    return `<div class="mq-card">
+      <div class="mq-dot ${PRIO_CLASS[q.priority]}"></div>
+      <div class="mq-body">
+        <div class="mq-row1">
+          <span class="mq-id">${q.id}</span>
+          <span class="mq-title">${q.title}</span>
+          <span class="sbadge ${STATUS_CLASS[q.status]}">${STATUS_LABEL[q.status]}</span>
+        </div>
+        <div class="mq-row2">
+          <span>${q.destination}</span><span>·</span>
+          <span>${q.pax} pax</span>
+          ${q.travelDate?`<span>·</span><span>${q.travelDate}</span>`:''}
+          ${q.budget?`<span>·</span><span>${q.budget}</span>`:''}
+        </div>
+        ${opsNote?`<div class="mq-note">💬 <span><strong>Ops update:</strong> ${opsNote.action} <span style="color:var(--text3)">· ${opsNote.time}</span></span></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── OPS SCREEN ────────────────────────────────────────────────────────────
+function showOpsScreen() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display   = 'block';
+  document.getElementById('ops-ava').textContent  = CFG.userName.charAt(0).toUpperCase();
+  document.getElementById('ops-name').textContent = CFG.userName;
+  populateAgentFilter();
+  renderNotifPanel();
+  updateStats();
+  render();
+  requestNotifPermission();
+}
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────────────────
+function requestNotifPermission() {
+  if('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function sendBrowserNotif(title, body) {
+  if('Notification' in window && Notification.permission === 'granted') {
+    new Notification('QueryFlow – ' + title, { body, icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><rect x="3" y="2" width="14" height="16" rx="2" fill="%231D9E75"/></svg>' });
+  }
+}
+
+function sendEmail(q) {
+  const prio = q.priority.toUpperCase();
+  const body = [
+    `Query ID    : ${q.id}`,
+    `Title       : ${q.title}`,
+    `Client      : ${q.client}`,
+    `Destination : ${q.destination}`,
+    `Travellers  : ${q.pax} pax`,
+    `Travel Date : ${q.travelDate || 'TBD'}${q.returnDate ? ' → ' + q.returnDate : ''}`,
+    `Budget      : ${q.budget || 'Not specified'}`,
+    `Hotel       : ${q.hotel || 'No preference'}`,
+    `Meal        : ${q.meal || 'No preference'}`,
+    `Visa        : ${q.visa || 'Not required'}`,
+    `Priority    : ${prio}`,
+    ``,
+    `Notes: ${q.notes || '—'}`,
+    ``,
+    `Submitted by: ${q.submittedBy}`,
+  ].join('\n');
+
+  fetch(FORMSPREE_URL, {
+    method : 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body   : JSON.stringify({
+      _replyto : NOTIFY_EMAIL,
+      email    : NOTIFY_EMAIL,
+      subject  : `[QueryFlow] ${prio === 'HIGH' ? '🔴' : prio === 'MEDIUM' ? '🟡' : '🟢'} New Query – ${q.id}: ${q.title}`,
+      message  : body,
+    })
+  }).catch(() => {}); // silent fail — browser notif still fires
+}
+
+function toggleNotifPanel() {
+  document.getElementById('notif-panel').classList.toggle('open');
+  // mark all read
+  notifs.forEach(n=>n.read=true);
+  document.getElementById('notif-dot').classList.remove('show');
+  save();
+  renderNotifPanel();
+}
+
+function renderNotifPanel() {
+  const unread = notifs.filter(n=>!n.read).length;
+  document.getElementById('notif-dot').classList.toggle('show', unread>0);
+  const el = document.getElementById('notif-list');
+  if(!notifs.length){ el.innerHTML='<div class="notif-empty">No alerts yet</div>'; return; }
+  el.innerHTML = notifs.slice(0,20).map(n=>`
+    <div class="notif-item ${n.read?'':'unread'}" onclick="jumpToQuery('${n.queryId}')">
+      <div class="notif-item-title">${n.title}</div>
+      <div class="notif-item-sub">${n.sub} · ${n.time}</div>
+    </div>`).join('');
+}
+
+function clearNotifs() {
+  notifs=[];
+  document.getElementById('notif-dot').classList.remove('show');
+  save();
+  renderNotifPanel();
+}
+
+function jumpToQuery(id) {
+  document.getElementById('notif-panel').classList.remove('open');
+  setView('all', document.querySelector('.nav-item'));
+  setTimeout(()=>selectQuery(id), 100);
+}
+
+// ── RENDER (OPS) ──────────────────────────────────────────────────────────
+function getFiltered() {
+  const q   = document.getElementById('search-inp').value.toLowerCase();
+  const agF = document.getElementById('agent-filter').value;
+  let list  = [...queries];
+  if(q)                list = list.filter(x=>(x.title+x.client+x.destination).toLowerCase().includes(q));
+  if(activeView!=='all'&&activeView!=='agents') list = list.filter(x=>x.status===activeView);
+  if(activePrio!=='all') list = list.filter(x=>x.priority===activePrio);
+  if(agF)              list = list.filter(x=>x.assignedAgent===agF);
+  if(activeSort==='priority'){ const o={high:0,medium:1,low:2}; list.sort((a,b)=>o[a.priority]-o[b.priority]); }
+  return list;
+}
+
+function render() {
+  if(activeView==='agents'){ renderAgentsView(); return; }
+  document.getElementById('list-area').style.display   = 'flex';
+  document.getElementById('agents-view').style.display = 'none';
+  const list = getFiltered();
+  const el   = document.getElementById('list-area');
+  el.innerHTML = '';
+  if(!list.length){ el.innerHTML='<div class="empty-msg">No queries found</div>'; return; }
+  list.forEach(q => {
+    const ag  = agents.find(a=>a.id===q.assignedAgent);
+    const div = document.createElement('div');
+    div.className = 'qcard'+(q.id===selectedId?' sel':'')+(q.status==='new'?' is-new-highlight':'');
+    div.onclick = ()=>selectQuery(q.id);
+    div.innerHTML = `
+      <div class="prio-dot ${PRIO_CLASS[q.priority]}"></div>
+      <div class="qcard-body">
+        <div class="qcard-row1">
+          <span class="qcard-id">${q.id}</span>
+          <span class="qcard-title">${q.title}</span>
+          <span class="sbadge ${STATUS_CLASS[q.status]}">${STATUS_LABEL[q.status]}</span>
+        </div>
+        <div class="qcard-row2">
+          <span>${q.client}</span><span>·</span><span>${q.destination}</span><span>·</span><span>${q.pax} pax</span>
+          ${q.travelDate?`<span>·</span><span>${q.travelDate}</span>`:''}
+          <span>· by ${q.submittedBy||'Sales'}</span>
+          ${ag?`<div class="agent-pill"><div class="agent-ava" style="background:${ag.color}20;color:${ag.color}">${ag.name.charAt(0)}</div>${ag.name.split(' ')[0]}</div>`:'<div class="agent-pill" style="color:#bbb">Unassigned</div>'}
+        </div>
+      </div>`;
+    el.appendChild(div);
+  });
+}
+
+function renderAgentsView() {
+  document.getElementById('list-area').style.display   = 'none';
+  document.getElementById('agents-view').style.display = 'grid';
+  const el = document.getElementById('agents-view');
+  if(!agents.length){ el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:30px;grid-column:1/-1">No agents yet.</div>'; return; }
+  el.innerHTML = agents.map((ag,i)=>{
+    const color  = ag.color||AGENT_COLORS[i%AGENT_COLORS.length];
+    const total  = queries.filter(q=>q.assignedAgent===ag.id).length;
+    const active = queries.filter(q=>q.assignedAgent===ag.id&&q.status!=='done').length;
+    const done   = queries.filter(q=>q.assignedAgent===ag.id&&q.status==='done').length;
+    const pct    = total?Math.round((done/total)*100):0;
+    return `<div class="agent-card">
+      <div class="ac-top">
+        <div class="ac-ava" style="background:${color}20;color:${color}">${ag.name.charAt(0)}</div>
+        <div><div class="ac-name">${ag.name}</div><div class="ac-role">${ag.role||'Ops'}</div></div>
+      </div>
+      <div class="ac-stats">
+        <div class="ac-stat"><div class="ac-stat-n">${active}</div><div class="ac-stat-l">Active</div></div>
+        <div class="ac-stat"><div class="ac-stat-n">${done}</div><div class="ac-stat-l">Done</div></div>
+        <div class="ac-stat"><div class="ac-stat-n">${total}</div><div class="ac-stat-l">Total</div></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;text-align:right">${pct}% complete</div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats() {
+  document.getElementById('st-total').textContent = queries.length;
+  document.getElementById('st-new').textContent   = queries.filter(x=>x.status==='new').length;
+  document.getElementById('st-ip').textContent    = queries.filter(x=>x.status==='in-progress').length;
+  document.getElementById('st-done').textContent  = queries.filter(x=>x.status==='done').length;
+  document.getElementById('nb-all').textContent   = queries.length;
+  document.getElementById('nb-new').textContent   = queries.filter(x=>x.status==='new').length;
+  document.getElementById('nb-ip').textContent    = queries.filter(x=>x.status==='in-progress').length;
+  document.getElementById('nb-pend').textContent  = queries.filter(x=>x.status==='pending').length;
+}
+
+function populateAgentFilter() {
+  const sel = document.getElementById('agent-filter');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All agents</option>';
+  agents.forEach(a=>{ sel.innerHTML+=`<option value="${a.id}">${a.name}</option>`; });
+  sel.value = cur;
+}
+
+// ── SELECT QUERY (OPS) ────────────────────────────────────────────────────
+function selectQuery(id) {
+  selectedId = id;
+  const q = queries.find(x=>x.id===id);
+  if(!q) return;
+  document.getElementById('det-empty').style.display = 'none';
+  const dc = document.getElementById('det-content');
+  dc.style.display = 'flex';
+  document.getElementById('d-id').textContent       = q.id + ' · by ' + (q.submittedBy||'Sales');
+  document.getElementById('d-title').textContent    = q.title;
+  document.getElementById('d-status').textContent   = STATUS_LABEL[q.status];
+  document.getElementById('d-priority').textContent = q.priority.charAt(0).toUpperCase()+q.priority.slice(1);
+  document.getElementById('d-client').textContent   = q.client;
+  document.getElementById('d-dest').textContent     = q.destination;
+  document.getElementById('d-tdate').textContent    = [q.travelDate, q.returnDate].filter(Boolean).join(' → ') || 'TBD';
+  document.getElementById('d-pax').textContent      = q.pax + ' people';
+  document.getElementById('d-desc').textContent     = q.notes || q.description || '—';
+  document.getElementById('status-sel').value       = q.status;
+  document.getElementById('note-ta').value          = '';
+
+  const extras = [['Hotel',q.hotel],['Meal',q.meal],['Budget',q.budget],['Visa',q.visa]].filter(([,v])=>v);
+  const extSec = document.getElementById('d-extra-section');
+  if(extras.length){ extSec.style.display='block'; document.getElementById('d-extra-grid').innerHTML=extras.map(([l,v])=>`<div class="info-tile"><div class="itile-lbl">${l}</div><div class="itile-val">${v}</div></div>`).join(''); }
+  else extSec.style.display='none';
+
+  const ag = agents.find(a=>a.id===q.assignedAgent);
+  const agBox = document.getElementById('d-agent-row');
+  if(ag){ const c=ag.color||'#1D9E75'; const act=queries.filter(x=>x.assignedAgent===ag.id&&x.status!=='done').length; agBox.innerHTML=`<div class="agent-big-ava" style="background:${c}20;color:${c}">${ag.name.charAt(0)}</div><div class="agent-info"><div class="agent-name">${ag.name}</div><div class="agent-role">${ag.role||'Ops'}</div><div class="agent-workload">${act} active queries</div></div>`; }
+  else agBox.innerHTML='<div style="font-size:12px;color:var(--text3)">No agent assigned</div>';
+
+  const tl = document.getElementById('d-tl');
+  tl.innerHTML = (q.log||[]).map((l,i,arr)=>`<div class="tl-item"><div class="tl-spine"><div class="tl-d"></div>${i<arr.length-1?'<div class="tl-bar2"></div>':''}</div><div style="flex:1;padding-bottom:4px"><div class="tl-action">${l.action}</div><div class="tl-by">${l.by}</div><div class="tl-t">${l.time}</div></div></div>`).join('');
+  render();
+}
+
+function updateStatus() {
+  const q = queries.find(x=>x.id===selectedId);
+  if(!q) return;
+  const ns   = document.getElementById('status-sel').value;
+  const note = document.getElementById('note-ta').value.trim();
+  q.status   = ns;
+  q.log.push({ action: note?`Status → ${STATUS_LABEL[ns]}: ${note}`:`Status → ${STATUS_LABEL[ns]}`, by: CFG.userName+' (Ops)', time: new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) });
+  save();
+  selectQuery(selectedId);
+  updateStats();
+  showToast('Status updated ✓','success');
+}
+
+function deleteQuery() {
+  if(!confirm('Delete this query?')) return;
+  queries = queries.filter(x=>x.id!==selectedId);
+  selectedId = null;
+  document.getElementById('det-empty').style.display  = 'flex';
+  document.getElementById('det-content').style.display = 'none';
+  save(); render(); updateStats();
+  showToast('Query deleted','success');
+}
+
+// ── AGENT PICKER ──────────────────────────────────────────────────────────
+function openAgentPicker() {
+  const q = queries.find(x=>x.id===selectedId);
+  selectedAgentId = q?q.assignedAgent:null;
+  const el = document.getElementById('agent-options');
+  el.innerHTML = '';
+  if(!agents.length){ el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:10px 0">No agents configured.</div>'; }
+  agents.forEach(ag=>{
+    const c=ag.color||'#1D9E75'; const act=queries.filter(x=>x.assignedAgent===ag.id&&x.status!=='done').length; const isSel=ag.id===selectedAgentId;
+    const opt=document.createElement('div'); opt.className='agent-option';
+    opt.onclick=()=>{ selectedAgentId=ag.id; document.querySelectorAll('.ao-check').forEach(c=>c.className='ao-check'); opt.querySelector('.ao-check').className='ao-check sel'; };
+    opt.innerHTML=`<div class="ac-ava" style="width:32px;height:32px;font-size:13px;background:${c}20;color:${c}">${ag.name.charAt(0)}</div><div class="ao-info"><div class="ao-name">${ag.name}</div><div class="ao-load">${ag.role||'Ops'} · ${act} active</div></div><div class="ao-check ${isSel?'sel':''}"><svg width="8" height="8" viewBox="0 0 10 10"><path d="M2 5l2.5 2.5L8 3" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>`;
+    el.appendChild(opt);
+  });
+  document.getElementById('agent-modal').classList.remove('hidden');
+}
+
+function confirmAssign() {
+  const q = queries.find(x=>x.id===selectedId);
+  if(!q||!selectedAgentId){ closeAgentModal(); return; }
+  q.assignedAgent = selectedAgentId;
+  const ag = agents.find(a=>a.id===selectedAgentId);
+  q.log.push({ action:`Assigned to ${ag?ag.name:'agent'}`, by:CFG.userName+' (Ops)', time:new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) });
+  closeAgentModal(); save(); selectQuery(selectedId); updateStats();
+  showToast(`Assigned to ${ag?ag.name:'agent'}`,'success');
+}
+function closeAgentModal(){ document.getElementById('agent-modal').classList.add('hidden'); }
+
+// ── CONTROLS ──────────────────────────────────────────────────────────────
+function setView(v,el){
+  activeView=v;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const titles={all:'All Queries',new:'New Queries','in-progress':'In Progress',pending:'Pending Info',done:'Completed',agents:'Ops Agents'};
+  document.getElementById('view-title').textContent=titles[v]||'Queries';
+  document.getElementById('stats-bar').style.display   = v==='agents'?'none':'flex';
+  document.getElementById('filters-bar').style.display = v==='agents'?'none':'flex';
+  render();
+}
+function setPrio(p,btn){ activePrio=p; document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(); }
+function doSort(s){ activeSort=s; render(); }
+
+function exportData(){
+  const blob=new Blob([JSON.stringify({queries,agents},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download=`queryflow-${new Date().toISOString().slice(0,10)}.json`; a.click();
+  URL.revokeObjectURL(url); showToast('Exported ✓','success');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+function showToast(msg,type='info'){
+  const t=document.getElementById('toast'); t.textContent=msg;
+  t.className='toast show'+(type==='success'?' success':type==='error'?' error':' info');
+  clearTimeout(t._to); t._to=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+if(load() && CFG.userName && CFG.role){
+  if(CFG.role==='sales') showSalesScreen();
+  else if(CFG.role==='ops') showOpsScreen();
+}
+
+// Close notif panel on outside click
+document.addEventListener('click', e=>{
+  const panel = document.getElementById('notif-panel');
+  const btn   = document.getElementById('notif-btn');
+  if(panel&&btn&&!panel.contains(e.target)&&!btn.contains(e.target)) panel.classList.remove('open');
+});
+</script>
+
+<!--
+  EMAIL NOTIFICATIONS
+  Emails go to hrithiksindhwani@travelmeventures.com automatically.
+  First time Formspree receives a submission it will send a one-time
+  confirmation email — just click Confirm in that email and all future
+  query notifications will arrive in your inbox with no further setup.
+-->
+</body>
+</html>
